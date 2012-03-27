@@ -1,0 +1,108 @@
+/*
+CocoNest template engine (alpha)
+MIT X11 License
+Copyright (C) 2012 Anders D. Johnson <AndersDJohnson@gmail.com>
+*/
+
+requirejs = require \requirejs
+Seq = require \seq
+
+requirejs.config({
+	#Pass the top-level main.js/index.js require
+	#function to requirejs so that node modules
+	#are loaded relative to the top-level JS file.
+	baseUrl: __dirname
+	nodeRequire: require
+})
+
+requirejs [\util \optparse \fs './typeOf' './coconest'], (util, optparse, fs, typeOf, coconest) ->
+	
+	switches = [
+		['-f', '--file FILENAME', 'Template file'],
+		['-d', '--data FILENAME', 'Data file (JSON)'],
+		['-o', '--out FILENAME', 'Output file'],
+		['-h', '--help', "Shows this help section"]
+	]
+	
+	options =
+		filename: null
+	
+	parser = new optparse.OptionParser(switches)
+	
+	parser.on 'help', ->
+		util.puts parser.toString()
+		process.exit 0
+	
+	parser.on 'file', (name, filename) ->
+		options.tplFile = filename
+	
+	parser.on 'data', (name, filename) ->
+		options.dataFile = filename
+	
+	parser.on 'out', (name, filename) ->
+		options.outFile = filename
+	
+	parser.parse process.argv
+	
+	unless options.tplFile?
+		msg = "ERROR: Specify a template file module.\n"
+		process.stderr.write msg
+		process.exit 1
+	
+	unless options.dataFile?
+		msg = "ERROR: Specify a data file.\n"
+		process.stderr.write msg
+		process.exit 1
+	
+	Seq()
+		.par( ->
+			fs.realpath options.tplFile, this
+		)
+		.catch( (err) ->
+			process.stderr.write "ERROR: Reading template file: #{err}\n"
+			process.exit 1
+		)
+		.par( ->
+			fs.readFile options.dataFile, 'utf8', this
+		)
+		.catch( (err) ->
+			process.stderr.write "ERROR: Reading data file: #{err}\n"
+			process.exit 1
+		)
+		.seq( (tplFile, dataFile) ->
+			
+			try
+				data = JSON.parse dataFile
+			catch err
+				process.stderr.write "ERROR: Parsing data file as JSON: #{err}\n"
+				process.exit 1
+			
+			tplDef = require tplFile
+			
+			if typeOf(tplDef) is 'function'
+				fn = tplDef
+			else if typeOf tplDef is 'object'
+				for name, fn in tplDef.partials
+					coconest.addPartial name, fn
+				if typeOf(tplDef.fn) is not 'function'
+					process.stderr.write "ERROR: Template file malformed.\n"
+					process.exit 1
+				else
+					fn = tplDef.fn
+			else
+				process.stderr.write "ERROR: Template file malformed.\n"
+				process.exit 1
+			
+			rendered = coconest.render fn, data
+			
+			if options.outFile?
+				fs.writeFile options.outFile, rendered, 'utf8', (err) ->
+					if err
+						process.stderr.write "ERROR: Failed to write rendered output.\n"
+						process.exit 1
+			else
+				process.stdout.write rendered
+		)
+		
+	
+

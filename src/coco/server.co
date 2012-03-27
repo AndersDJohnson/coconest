@@ -1,0 +1,43 @@
+requirejs = require \requirejs
+
+requirejs.config({
+	#Pass the top-level main.js/index.js require
+	#function to requirejs so that node modules
+	#are loaded relative to the top-level JS file.
+	nodeRequire: require
+})
+
+requirejs (require) ->
+	coconest = require \coconest
+	coconest.partial \users, (users) ->
+		@ul class:\users, ~>
+			for user of users
+				@li class:\user, ~>
+					@span class:\name, user.name
+
+	templateFn = ($) ->
+		@doctype $.doctype
+		@html class:[\no-js] lang:\en, ~>
+			@head ~>
+				@title $.title
+				@link rel:\stylesheet type:'text/css' href:''
+				@script type:'text/javascript' src:'foo'
+			@body ~>
+				@header ~>
+					@div id:\title, $.title
+				@div "blah"
+				@$users $.users
+				@div ~>
+					@span 'Hello!'
+
+	data =
+		doctype: \html5
+		lang: \en
+		title: "Page Title"
+		users: [
+			{name:\John}
+			{name:\Joe}
+		]
+
+	rendered = coconest.render templateFn, data
+	console.log rendered

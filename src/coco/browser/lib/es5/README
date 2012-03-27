@@ -1,0 +1,42 @@
+-*- markdown -*-
+
+> King Arthur: One, two, five!  
+> Sir Galahad: Three sir!  
+> King Arthur: THREE!  
+>   - Monty Python and the Holy Grail
+
+# es5 - JavaScript/EcmaScript 5 in 3
+
+While some of the best features of ES5 will never run in an ES3-only engine, it also adds some convenience methods which are perfectly possible to implement in current engines (or at least stub out in a tolerable way)
+
+While  many of these functions are provided by the big JavaScript libraries, it's not always appropriate to the task to bring in the heavy hitters.
+
+## Usage
+
+Load the `es5.js` file.  The file should be compatible with the CommonJS module system.  For non-CommonJS systems, this means it loads all symbols into the global variable `exports`.  You'll probably want to follow the load with 
+
+    var es5 = exports;
+    delete exports; // optional
+
+To load everything call
+
+    es5.use.constructorMethods().imperfectMethods().prototypeMethods();
+
+- `constructorMethods`: methods on the constructor or class name, e.g. `Array.isArray`.
+- `imperfectMethods`: methods on Object, which can allow most code using the new APIs to run without error, but can't really implement the enhanced object model.
+- `prototypeMethods`: properties on the prototype, which will show up on for-in iterations, and so might not be desired.
+
+Alternately, you can just cherry-pick methods, or even call them directly.  Note that while the `es5.use` methods will not overwrite existing (presumably optimized) methods, such cherry-picking relies on your own discretion.
+
+    Array.prototype.forEach = es5.Array.prototype.forEach;
+    x = es5.Object.create();
+
+## JSON
+
+This project does not include JSON support.  json2.js is recommended as a specification-compatible implementation.
+
+http://www.json.org/js.html
+
+## Licence
+
+MIT Licence; see LICENSE.txt

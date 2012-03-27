@@ -1,0 +1,28 @@
+/*
+ * Allow use as CommonJS module
+ */
+if typeof define is not \function
+	define = require(\amdefine)(module)
+
+/**
+ * Define AMD module
+ */
+define ->
+	
+	types =
+		'undefined'        : 'undefined'
+		'number'           : 'number'
+		'boolean'          : 'boolean'
+		'string'           : 'string'
+		'[object Function]': 'function'
+		'[object RegExp]'  : 'regexp'
+		'[object Array]'   : 'array'
+		'[object Date]'    : 'date'
+		'[object Error]'   : 'error'
+	
+	/**
+	 * Returns the typeOf of a variable as a string.
+	 */
+	return (o) ->
+		types[typeof o] || types[Object.prototype.toString.call(o)] || (if o then 'object' else 'null')
+

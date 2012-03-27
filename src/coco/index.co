@@ -1,0 +1,23 @@
+if typeof define is not \function
+	define = require(\amdefine)(module)
+
+define ->
+	ret = {
+		'partials':
+			'users': (users) ->
+				@ul class:\users, ~>
+					for user of users
+						@li class:\user, ~>
+							@span class:\name, user.name
+		'fn': ($) ->
+			@doctype $.doctype
+			@html ~>
+				@head ~>
+					@title $.title
+					@$styles $.styles
+					@$scripts $.scripts
+				@body ~>
+					@noscript 'Please enable Javascript.'
+	}
+	return ret.fn
+

@@ -1,0 +1,512 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <link rel="stylesheet" href="qunit/qunit.css" type="text/css" media="screen" />
+<script type="text/javascript" src="qunit/qunit.js"></script>
+
+<script type="text/javascript" src="es5.js"></script>
+
+  <script>
+
+var es5 = exports;
+delete exports;
+
+test("got a module", function() {
+  ok(es5);
+});
+
+function throwsTypeError(o, f, args) {
+  test(f + " does typechecking", function() {
+    try {
+      o[f].apply(o, args);
+      ok(false, "should have thrown TypeError");
+    } catch (e) {
+      ok(e instanceof TypeError, "caught TypeError");
+    }
+  });
+}
+
+function stub(o, f) {
+  throwsTypeError(o, f, [1]);
+  var x = {};
+  test(f + " stubbed", function() {
+    equals(o[f].apply(o, [x]), x);
+  });
+}
+
+function queryStub(o, f, result) {
+  throwsTypeError(o, f, [1]);
+  test(f + " stubbed", function() {
+    equals(o[f].apply(o, [x]), result);
+  });
+}
+
+function testPropertyDescriptor(desc, value, prefix) {
+  expect(0);
+
+  test(prefix + " truthy", function() {
+    ok(desc);
+  });
+
+  test(prefix + " value property", function() {
+    equals(desc.value, 1);
+  });
+
+  test(prefix + " writeable property", function() {
+    equals(desc.writeable, true);
+  });
+
+  test(prefix + " enumerable property", function() {
+    equals(desc.enumerable, true);
+  });
+
+  test(prefix + " configurable property", function() {
+    equals(desc.configurable, true);
+  });
+}
+
+function usesThreeArgumentCallback(name) {
+  test(name + " calls with specified object", function() {
+    expect(1);
+    var x = {};
+    es5.Array.prototype[name].call([true], function() {return equals(this, x);}, x);
+  });
+
+  test(name + " should have undefined this, but the engine supplies [window] even if we try to pass undefined", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true], function() {return same(this, window);});
+  });
+
+  test(name + " passes value as first argument", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true], function(v) {return equals(true, v);});
+  });
+
+  test(name + " passes index as first argument", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true], function(v, i) {return equals(0, i);});
+  });
+
+  test(name + " passes array as third argument", function() {
+    expect(1);
+    var x = [true];
+    es5.Array.prototype[name].call(x, function(v, i, a) {return equals(x, a);});
+  });
+
+  var x = [];
+  x.every = es5.Array.prototype[name];
+  throwsTypeError(x, name, [1]);
+}
+
+function usesFourArgumentCallback(name) {
+  test(name + " should have undefined this, but the engine supplies [window] even if we try to pass undefined", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true, true], function() {return same(this, window);});
+  });
+
+  test(name + " passes accumulator as first argument", function() {
+    expect(1);
+    var x = {};
+    es5.Array.prototype[name].call([true], function(acc) {return equals(acc, x);}, x);
+  });
+
+  test(name + " passes value as second argument", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true, true], function(acc, v) {return equals(true, v);});
+  });
+
+  test(name + " passes index as third argument", function() {
+    expect(1);
+    es5.Array.prototype[name].call([true], function(acc, v, i) {return equals(0, i);}, true);
+  });
+
+  test(name + " passes array as fourth argument", function() {
+    expect(1);
+    var x = [true, true];
+    es5.Array.prototype[name].call(x, function(acc, v, i, a) {return equals(x, a);});
+  });
+
+  test(name + " returns accumulator", function() {
+    var x = {};
+    equals(es5.Array.prototype[name].call([], function() {}, x), x);
+  });
+
+  test(name + " passes accumulator through", function() {
+    equals(es5.Array.prototype[name].call([2, 3, 5], function(acc, v) {return acc + v;}, 0), 10);
+  });
+
+  var x = [];
+  x.every = es5.Array.prototype[name];
+  throwsTypeError(x, name, [1]);
+}
+
+module("Object");
+test("Object", function() {
+  ok(es5.Object);
+
+  throwsTypeError(es5.Object, 'getPrototypeOf', [1]);
+
+  test("getPrototypeOf", function() {
+    equals(es5.Object.getPrototypeOf({}), Object.prototype);
+  });
+
+  throwsTypeError(es5.Object, 'getOwnPropertyDescriptor', [1]);
+
+  test("getOwnPropertyDescriptor", function() {
+    var x = {a: 1, b: 2};
+    var a = es5.Object.getOwnPropertyDescriptor(x, 'a');
+    testPropertyDescriptor(a, 1, 'getOwnPropertyDescriptor');
+  });
+
+  throwsTypeError(es5.Object, 'getOwnPropertyNames', [1]);
+
+  test("getOwnPropertyNames", function() {
+    var F = function(){};
+    F.prototype = {z:26};
+    var x = new F();
+    x.a = 1;
+    x.b = 2;
+
+    var names = es5.Object.getOwnPropertyNames(x);
+    same(names, ['a', 'b']);
+  });
+
+  throwsTypeError(es5.Object, 'create', [1]);
+
+  test("create with null", function() {
+    ok(es5.Object.create());
+  });
+
+  test("create with an object", function() {
+    var x = {};
+    var y = es5.Object.create(x);
+    ok(x === es5.Object.getPrototypeOf(y), "Prototype match");
+  });
+
+  test("create with properties", function() {
+    var x = es5.Object.create(null, {a: {value: 1}});
+    equals(x.a, 1);
+  });
+
+  throwsTypeError(es5.Object, 'defineProperty', [1]);
+
+  test("defineProperty", function() {
+    var x = {};
+    es5.Object.defineProperty(x, 'a', {value: 1});
+    equals(x.a, 1);
+  });
+
+  test("defineProperty returns the object", function() {
+    var x = {};
+    equals(es5.Object.defineProperty(x, 'a'), x);
+  });
+
+  throwsTypeError(es5.Object, 'defineProperties', [1]);
+
+  test("defineProperties", function() {
+    expect(2);
+    x = {};
+    es5.Object.defineProperties(x, {a: {value: 1}, b: {value: 2}});
+    equals(x.a, 1);
+    equals(x.b, 2);
+  });
+
+  test("defineProperties returns the object", function() {
+    var x = {};
+    equals(es5.Object.defineProperties(x, {a: {}}), x);
+  });
+
+  stub(es5.Object, 'seal');
+  stub(es5.Object, 'freeze');
+  stub(es5.Object, 'preventExtensions');
+
+  queryStub(es5.Object, 'isSealed', false);
+  queryStub(es5.Object, 'isFrozen', false);
+  queryStub(es5.Object, 'isExtensible', true);
+
+  throwsTypeError(es5.Object, 'keys', [1]);
+
+  test("keys", function() {
+    var F = function(){};
+    F.prototype = {z:26};
+    var x = new F();
+    x.a = 1;
+    x.b = 2;
+
+    var names = es5.Object.keys(x);
+    same(names, ['a', 'b']);
+  });
+});
+
+module("Function");
+test("Function", function() {
+  throwsTypeError(es5.Function.prototype, 'bind');
+  
+  test("bind returns a function", function() {
+    var f = function(){};
+    var g = es5.Function.prototype.bind.call(f, {});
+    equals(typeof(g), 'function');
+  });
+
+  test("bound function is passed function", function() {
+    var f = function(){return 'pass';};
+    var g = es5.Function.prototype.bind.call(f, {});
+    equals(g(), 'pass');
+  });
+
+  test("bound function operates on specified object", function() {
+    var x = {a: 1};
+    var f = function(){return this;};
+    var g = es5.Function.prototype.bind.call(f, x);
+    equals(g(), x);
+  });
+
+  test("bound function operates on specified arguments", function() {
+    var f = function(a){return a;};
+    var g = es5.Function.prototype.bind.call(f, null, 1);
+    equals(g(), 1);
+  });
+
+  test("bound function takes new arguments", function() {
+    var f = function(a){return a;};
+    var g = es5.Function.prototype.bind.call(f, null);
+    equals(g(2), 2);
+  });
+
+  test("bind adjusts length", function() {
+    var f = function(a, b){};
+    var g = es5.Function.prototype.bind.call(f, null, 1);
+    equals(g.length, 1);
+  });
+
+  test("length of bind is 1", function() {
+    equals(es5.Function.prototype.bind.length, 1);
+  });
+});
+
+module("Array");
+test("Array", function() {
+  test("objects are not arrays", function() {
+    equals(es5.Array.isArray({}), false);
+  });
+
+  test("arrays are arrays", function() {
+    equals(es5.Array.isArray([]), true);
+  });
+
+  test("indexOf found", function() {
+    equals(es5.Array.prototype.indexOf.call([0, 1, 2, 1], 1), 1);
+  });
+
+  test("indexOf not found", function() {
+    equals(es5.Array.prototype.indexOf.call([0, 1, 2, 1], 42), -1);
+  });
+
+  test("indexOf empty", function() {
+    equals(es5.Array.prototype.indexOf.call([], 42), -1);
+  });
+
+  test("indexOf from", function() {
+    equals(es5.Array.prototype.indexOf.call([0, 1, 2, 1], 1, 2), 3);
+  });
+
+  test("indexOf from negative", function() {
+    equals(es5.Array.prototype.indexOf.call([0, 1, 2, 1], 1, -2), 3);
+  });
+
+  test("indexOf from past the end", function() {
+    equals(es5.Array.prototype.indexOf.call([0, 1, 2, 1], 1, 4), -1);
+  });
+
+
+  test("lastIndexOf found", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([2, 1, 2, 3], 2), 2);
+  });
+
+  test("lastIndexOf not found", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([2, 1, 2, 3], 42), -1);
+  });
+
+  test("lastIndexOf empty", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([], 42), -1);
+  });
+
+  test("lastIndexOf from", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([2, 1, 2, 3], 2, 1), 0);
+  });
+
+  test("lastIndexOf from negative", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([2, 1, 2, 3], 2, -3), 0);
+  });
+
+  test("lastIndexOf from past the end", function() {
+    equals(es5.Array.prototype.lastIndexOf.call([2, 1, 2, 3], 1, 0), -1);
+  });
+
+
+  test("every can return true", function() {
+    equals(es5.Array.prototype.every.call([true, true], function(v) {return v;}), true);
+  });
+
+  test("every can return false", function() {
+    equals(es5.Array.prototype.every.call([false, true], function(v) {return v;}), false);
+  });
+
+ test("every is true for empty array", function() {
+    equals(es5.Array.prototype.every.call([], function() {return false;}), true);
+  });
+
+  usesThreeArgumentCallback('every');
+
+
+  test("some can return true", function() {
+    equals(es5.Array.prototype.some.call([false, true], function(v) {return v;}), true);
+  });
+
+  test("some can return false", function() {
+    equals(es5.Array.prototype.some.call([false, false], function(v) {return v;}), false);
+  });
+
+  test("some is false for empty array", function() {
+    equals(es5.Array.prototype.some.call([], function() {return true;}), false);
+  });
+
+  usesThreeArgumentCallback('some');
+
+
+  usesThreeArgumentCallback('forEach');
+
+
+  usesThreeArgumentCallback('map');
+
+  test("map collects return values", function() {
+    same(es5.Array.prototype.map.call([1, 2, 3], function(v) {return v + 1;}), [2, 3, 4]);
+  });
+
+
+  usesThreeArgumentCallback('filter');
+
+  test("filter does", function() {
+    same(es5.Array.prototype.filter.call([1, 2, 3, 4], function(v) {return v % 2 == 0;}), [2, 4]);
+  });
+
+
+  usesFourArgumentCallback('reduce');
+
+  test("reduce goes left to right", function() {
+    expect(3);
+    es5.Array.prototype.reduce.call([0, 1, 2], function(acc, v) {equals(acc, v); return acc + 1;}, 0);
+  });
+
+
+  usesFourArgumentCallback('reduceRight');
+
+  test("reduceRight goes right to left", function() {
+    expect(3);
+    es5.Array.prototype.reduceRight.call([0, 1, 2], function(acc, v) {equals(acc, v); return acc - 1;}, 2);
+  });
+});
+
+module("String");
+test("String", function() {
+  test("trim", function() {
+    equals(es5.String.prototype.trim.call(' a '), 'a');
+  });
+});
+
+module("Date");
+test("Date", function() {
+  test("now", function() {
+    var x = es5.Date.now();
+    equals(typeof(x), 'number');
+    ok(x > 0, 'time is positive');
+  });
+
+  test("toISOString", function() {
+    equals(es5.Date.prototype.toISOString.call(new Date(1975, 12 - 1, 15, 5, 45)), "1975-12-15T11:45:00.000Z");
+  });
+
+  test("toJSON", function() {
+    equals(es5.Date.prototype.toJSON.call(new Date(1975, 12 - 1, 15, 5, 45)), "1975-12-15T11:45:00.000Z");
+  });
+
+  test("toJSON rejects non-finite dates", function() {
+    equals(es5.Date.prototype.toJSON.call(new Date(NaN), null));
+  });
+});
+
+module("pollution");
+var god = this;
+test("constructor pollution", function() {
+  es5.use.constructorMethods();
+  for (var mod in es5) {
+    if (mod == 'use' || mod == 'Object') {
+      continue;
+    }
+    for (var stat in es5[mod]) {
+      if (es5[mod].hasOwnProperty(stat) && stat != 'prototype') {
+        ok(god[mod][stat], mod + '.' + stat);
+      }
+    }
+    for (var meth in es5[mod].prototype) {
+      console.log(mod + '.' + meth);
+      // hasOwnProperty return 'undefined' for an object named prototype?
+      ok(god[mod].prototype[meth] != es5[mod].prototype[meth], '!' + mod + '.prototype.' + meth);
+    }
+  }
+  
+  for (var stat in es5.Object) {
+    if (es5.Object.hasOwnProperty(stat) && stat != 'prototype') {
+      ok(god.Object[stat] != es5.Object[stat], 'Object.' + stat);
+    }
+  }
+});
+
+test("stub methods", function() {
+  es5.use.imperfectMethods();
+  for (var stat in es5.Object) {
+    if (es5.Object.hasOwnProperty(stat)) {
+      ok(god.Object[stat], 'Object.' + stat);
+    }
+  }
+});
+
+test("prototype pollution", function() {
+  es5.use.prototypeMethods();
+  for (var mod in es5) {
+    if (mod == 'use') {
+      continue;
+    }
+    for (var meth in es5[mod].prototype) {
+      // hasOwnProperty return 'undefined' for an object named prototype?
+      ok(god[mod].prototype[meth], mod + '.prototype.' + meth);
+      console.log(god[mod].prototype[meth]);
+    }
+  }
+});
+
+test("permit use chaining", function() {
+  for (var meth in es5.use) {
+    equals(es5.use[meth](), es5.use);
+  }
+});
+
+test("global variables", function() {
+  equals(window.stat, undefined);
+  equals(window.meth, undefined);
+});
+
+module("echo");
+
+  </script>
+  
+</head>
+<body>
+ <h1 id="qunit-header">EcmaScript 5 in 3</h1>
+ <h2 id="qunit-banner"></h2>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+</body>
+</html>
+</html>

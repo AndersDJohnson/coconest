@@ -1,0 +1,34 @@
+requirejs.config({
+	#Pass the top-level main.js/index.js require
+	#function to requirejs so that node modules
+	#are loaded relative to the top-level JS file.
+	baseUrl: 'file:///home/anders/Desktop/coconest/compiled/javascript'
+	#nodeRequire: require
+	/*paths: {
+		'coconest': './coconest'
+	}*/
+})
+
+requirejs ['coconest'], (coconest) ->
+	
+	contentPartial = ($) ->
+		@div 'Welcome!'
+	coconest.addPartial 'content', contentPartial
+	
+	templateFn = ($) ->
+		@header ~>
+			@h1 id:\title, $.title
+		@div id:\content, ~>
+			@$content $
+
+	data =
+		title: "Page Title"
+		users: [
+			{name:\John}
+			{name:\Joe}
+		]
+
+	rendered = coconest.render templateFn, data
+	document.body.innerHTML = rendered
+	document.title = data.title
+	

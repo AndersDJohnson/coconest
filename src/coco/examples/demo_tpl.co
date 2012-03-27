@@ -1,0 +1,27 @@
+if typeof define is not \function
+	define = require(\amdefine)(module)
+
+define ->
+	return {
+		'partials':
+			'users': (users) ->
+				@ul class:\users, ~>
+					for user of users
+						@li class:\user, ~>
+							@span class:\name, user.name
+		'fn': ($) ->
+			@doctype $.doctype
+			@html class:[\no-js] lang:\en, ~>
+				@head ~>
+					@title $.title
+					@link rel:\stylesheet type:'text/css' href:''
+					@script type:'text/javascript' src:'foo'
+				@body ~>
+					@header ~>
+						@div id:\title, $.title
+					@div "blah"
+					@$users $.users
+					@div ~>
+						@span 'Hello!'
+	}
+

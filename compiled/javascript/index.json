@@ -1,0 +1,21 @@
+{
+	"doctype": "html5",
+	"title": "The Page Title",
+	"scripts": [
+		{
+			"src": "javascript/browser/lib/require.js",
+			"data-main": "javascript/browser/browser"
+		},
+		{
+			"content": ""
+		}
+	],
+	"styles": [
+		{
+			"href": "test"
+		},
+		{
+			"content": ""
+		}
+	]
+}

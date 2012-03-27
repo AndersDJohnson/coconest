@@ -1,0 +1,47 @@
+requirejs.config({
+	#Pass the top-level main.js/index.js require
+	#function to requirejs so that node modules
+	#are loaded relative to the top-level JS file.
+	baseUrl: 'file:///home/anders/Desktop/coconest/compiled/javascript'
+	#nodeRequire: require
+	/*paths: {
+		'coconest': './coconest'
+	}*/
+})
+
+requirejs ['coconest'], (coconest) ->
+	
+	addCount = 0
+	addedTpl = ($) ->
+		@div class:\added, "[#{$.addCount}] #{$.date}"
+	
+	window.doAdd = ->
+		console.log \add
+		data =
+			addCount: addCount++
+			date: (new Date!).toString!
+		rend = coconest.render addedTpl, data
+		document.getElementById(\adds).innerHTML += rend
+	
+	contentPartial = ($) ->
+		@div id:\adds
+		@a href:'#' onclick:'doAdd()', 'Add'
+	coconest.addPartial 'content', contentPartial
+	
+	templateFn = ($) ->
+		@header ~>
+			@h1 id:\title, $.title
+		@div id:\content, ~>
+			@$content $
+
+	data =
+		title: "Page Title"
+		users: [
+			{name:\John}
+			{name:\Joe}
+		]
+
+	rendered = coconest.render templateFn, data
+	document.body.innerHTML = rendered
+	document.title = data.title
+	

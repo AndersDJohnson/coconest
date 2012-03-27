@@ -1,0 +1,40 @@
+if typeof define is not \function
+	define = require(\amdefine)(module)
+
+define ->
+	ret =
+		
+		'partials':
+			'users': (users) ->
+				@ul class:\users, ~>
+					for user of users
+						@li class:\user, ~>
+							@span class:\name, user.name
+			'l': (link) ->
+				text = link.text || ''
+				delete link.text
+				@a link, text
+		
+		
+		'fn': ($) ->
+			@doctype \html5
+			@html ~>
+				@head ~>
+					@title $.title
+					@$scripts $.scripts
+					@$styles $.styles
+				@body ~>
+					@noscript 'Please enable Javascript.'
+					@h1 id:\title, $.title
+					@nav ~>
+						@ul ~>
+							for link of $.nav.main
+								@li ~>
+									@$l link
+					@div id:\content, $.content
+					@div id:\sidebar, 'Sidebar'
+				
+			
+		
+	
+

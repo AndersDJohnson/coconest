@@ -1,0 +1,201 @@
+/*
+CocoNest template engine (alpha)
+MIT X11 License
+Copyright (C) 2012 Anders D. Johnson <AndersDJohnson@gmail.com>
+*/
+
+/*
+ * Allow use as CommonJS module
+ */
+if typeof define is not \function
+	define = require(\amdefine)(module)
+
+/**
+ * Define AMD module
+ */
+define ['./typeOf', './indexOf'], (typeOf) ->
+	
+	doctypes =
+		html5: '<!doctype html>'
+		xhtml10strict: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'
+		xhtml10trans: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+		xhtml11: '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
+		html4strict: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">'
+		html4trans: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">'
+		html4frameset: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">'
+	
+	# http://meiert.com/en/indices/html-elements/
+	tags =
+		newline: [\html \body]
+		#http://dev.w3.org/html5/spec-author-view/syntax.html#void-elements
+		void: [\area \base \basefont \br \col \command \embed \frame \hr \img \input \keygen \link \meta \param \source \track \wbr]
+		# http://dev.w3.org/html5/markup/elements.html
+		html5: [\article \aside \audio \bdi \canvas \command \datalist \details \embed \fieldset \figure \footer \header \hgroup \keygen \mark \meter \nav \output \progress \rp \s \section \source \summary \time \track \video \wbr]
+		# http://www.w3.org/TR/html4/index/elements.html
+		html4: [\a \abbr \acronym \address \applet \area \b \base \basefont \bdo \big \blockquote \body \br \button \caption \center \cite \code \col \colgroup \dd \del \dfn \dir \div \dl \dt \em \fieldset \font \form \frame \frameset \h1 \h2 \h3 \h4 \h5 \h6 \head \hr \html \i \iframe \img \input \ins \isindex \kbd \label \legend \li \link \map \menu \meta \noframes \noscript \object \ol \optgroup \option \p \param \pre \q \s \samp \script \select \small \span \strike \strong \style \sub \sup \table \tbody \td \textarea \tfoot \th \thead \title \tr \tt \u \ul \var]
+	tags[\normal] = tags.html4.concat( tags.html5 )
+	
+	
+	addTag = (name) ->
+		@prototype[name] = ->
+			@tag.apply @, [name] + @@
+	
+	addPartial = (name, tplFn, options) ->
+		options =
+			override: false
+		if typeOf(name) is not 'string' or typeOf(tplFn) is not 'function'
+			throw new Error "Partial must have name string and function."
+		if (not (name of Template.prototype.partialNames)) or options.override
+			Template.prototype.partialNames.push name
+			Template.prototype['$'+name] = tplFn
+		#else
+		#	throw new Error "Cannot redefine tag or partial '#{name}'!"
+	
+	/**
+	 * Template class
+	 *  contains settings, public methods, partials, utilities, etc.
+	 */
+	class Template
+		#constructor
+		->
+			@o = ''
+			@compress = false
+			@indentLevel = 0
+			@parentLevel = 0
+		
+		# prototype properties
+		partialNames: []
+		
+		doctypes: doctypes
+		tags: tags
+		
+		id: ->
+			@o += ("\t" * @indentLevel) unless @compress
+	
+		nl: ->
+			@o += "\n" unless @compress
+	
+		doctype: (t) ->
+			@o += @doctypes[t] || ''
+			@o += "\n" unless @compress
+		
+		tag: ->
+			name = @@0.toLowerCase!
+			newline = (@tags.newline.indexOf(name) >= 0) and not @compress
+			hollow = t1 is not \undefined
+			nested = t1 is \function
+			dontindent = false
+			t1 = typeOf(@@1)
+			t2 = typeOf(@@2)
+			attrs = ''
+			if t2 is \function
+				i = @@2
+				inner = ~>
+					@parentLevel = ++@indentLevel
+					@nl!
+					i!
+					@indentLevel--
+			else if t2 is \string
+				i = @@2
+				inner = ~>
+					@o += i
+			else
+				inner = ->
+					@indentLevel = @parentLevel
+			if t1 is \function
+				i = @@1
+				inner = ~>
+					@parentLevel = ++@indentLevel
+					@nl!
+					i!
+					@indentLevel--
+			else if t1 is \string
+				i = @@1
+				dontindent = true
+				inner = ~>
+					@o += i
+					#@indentLevel = @parentLevel
+			else if t1 is \object
+				for attr, value in @@1
+					if value is not false
+						if typeOf(value) is 'boolean'
+							value = attr
+						else if typeOf(value) is 'array'
+							value = value.join ' '
+						else if typeOf(value) is 'object'
+							value = JSON.stringify value
+							value = value.replace /\"/g, '&#034;'
+						attrs += ' '+attr+'="'+value+'"'
+		
+			@id!
+			if (@tags.void.indexOf(name) >= 0)
+				@o += "<#name#attrs />"
+			else
+				@o += "<#name#attrs>"
+				inner!
+				unless (@indentLevel is @parentLevel) or (dontindent)
+					@id!
+				@o += "</#name>"
+			@nl!
+		
+		# logic
+	
+		for tagName of @prototype.tags.normal
+			let t = tagName
+				addTag.call @, t
+		
+	/* 
+	 * end class Template
+	 */
+	
+	/* 
+	 * Add default partials
+	 */
+	addPartial 'raw', (content) ->
+		@o += content
+	
+	addPartial 'scripts', (scripts) ->
+		return unless scripts?
+		for script of scripts
+			script.type ?= 'text/javascript'
+			if script.content?
+				content = script.content
+				delete script.content
+				@script script, content
+			else
+				@script script
+	
+	addPartial 'styles', (styles) ->
+		return unless styles?
+		for style of styles
+			style.type ?= 'text/css'
+			if style.content?
+				content = style.content
+				delete style.content
+				@style style, content
+			else
+				@link style
+	
+	render = (tplFn, data) ->
+		tpl = new Template()
+		tplFn.call tpl, data
+		tpl.o
+	
+	load = (path) ->
+		tpl = require path
+		for name, fn in tpl.partials
+			addPartial name, fn
+		return tpl
+	
+	/**
+	 * return visible AMD module
+	 */
+	return do ->
+		return {
+			render: render
+			addPartial: addPartial
+			load: load
+			#compile: compile
+		}
+	
+
