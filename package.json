@@ -1,8 +1,9 @@
 {
-    "name": "coconest",
-    "author": "Anders D. Johnson <AndersDJohnson@gmail.com>",
-    "description": "Functional templating system, with nesting for HTML/XML/SGML.",
-    "keywords": [],
-    "version": "0.1.0",
-    "main": "./src/coco/coconest"
+  "name": "coconest",
+  "author": "Anders D. Johnson <AndersDJohnson@gmail.com>",
+  "description": "Functional templating system, with nesting for HTML/XML/SGML.",
+  "keywords": [],
+  "version": "0.1.0",
+  "main": "./src/coco/coconest",
+  "license": "MIT"
 }
